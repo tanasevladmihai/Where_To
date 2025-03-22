@@ -28,10 +28,12 @@
 - geopy (around 2.4.1)
 - python-decouple (around 3.8)
 <br>	
-<li> <strong> (In Terminal) Setting up the virtual enviroment and running the server: </strong> </li>	
+<li> <strong> (In Terminal, works on macOS and Linux, find alternatives for Windows if necessary) Setting up the virtual enviroment and running the server: </strong> </li>	
 
 - After selecting the directory of the project through <code> cd </code>, you have to set up the virtual environment: <br>
-<code> python manage.py migrate </code>
+<code> python -m venv venv </code>
+- Then activate it: <br>
+<code> source venv/bin/activate </code>
 - Look at the code in <code>settings.py</code> and modify the indicated fields related to the database, then: <br>
 <code> python manage.py migrate </code>
 - Create superuser for database (add username, email, password): <br>
