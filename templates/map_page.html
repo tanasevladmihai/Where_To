@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ category.name }} in {{ city.name }}</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <script src="https://maps.googleapis.com/maps/api/js?key={{ GOOGLE_MAPS_API_KEY }}"></script>
+    <style>
+        .location-highlight {
+            font-weight: bold;
+            color: #00796b;
+            font-size: 1.2em;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 20%;
+            left: 20%;
+            width: 60%;
+            background: white;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            border-radius: 10px;
+        }
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+        .modal button {
+            background-color: #00796b;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .modal button:hover {
+            background-color: #004d40;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="{% url 'city_list' %}" class="header-button"></a>
+        <h1 class="head-title">{{ category.name }} in {{ city.name }}</h1>
+        <div class="nav-button" id="backToCategoriesBtn" style="background-image: url('{% static 'images/categories/'|add:category.name|slugify|add:'.jpg' %}')"></div>
+        <a href="{% url 'category_list' city.id %}" class="header-button">Back to Categories</a>
+    </div>
+    <div class="container">
+        <div class="left-panel" id="event-list" style="background-color: #fff5f2; padding: 10px; border-radius: 15px;">
+
+        </div>
+        <div class="right-panel">
+            <div id="map"></div>
+        </div>
+    </div>
+
+    <!-- modal for event details -->
+    <div class="modal-overlay" id="modal-overlay"></div>
+    <div class="modal" id="modal">
+        <h2 id="modal-title"></h2>
+        <p id="modal-description"></p>
+        <button onclick="closeModal()">Close</button>
+    </div>
+
+    <script>
+        let map, markers = [];
+        const cityId = {{ city.id }}, categoryId = {{ category.id }};
+
+        //initialize the map
+        function initMap(lat = 0, lng = 0) {
+            map = new google.maps.Map(document.getElementById('map'), {
+                center: { lat: lat, lng: lng },
+                zoom: 12
+            });
+        }
+
+        //update the map center upon clicking event
+        function updateMap(lat, lng) {
+            map.setCenter({ lat: lat, lng: lng });
+        }
+
+        //add a marker to the map
+        function addMarker(lat, lng, title, description) {
+            const marker = new google.maps.Marker({
+                position: { lat: lat, lng: lng },
+                map: map,
+                title: title
+            });
+            const infoWindow = new google.maps.InfoWindow({
+                content: `<h3>${title}</h3><p>${description}</p>`
+            });
+            marker.addListener('click', () => infoWindow.open(map, marker));
+            markers.push(marker);
+        }
+
+        //show that modal with event details
+        function showModal(name, description) {
+            document.getElementById('modal-title').textContent = name;
+            document.getElementById('modal-description').textContent = description;
+            document.getElementById('modal').style.display = 'block';
+            document.getElementById('modal-overlay').style.display = 'block';
+        }
+
+        //closes that modal
+        function closeModal() {
+            document.getElementById('modal').style.display = 'none';
+            document.getElementById('modal-overlay').style.display = 'none';
+        }
+
+        //API events
+        function loadEvents(position) {
+            const url = `/api/events/${cityId}/${categoryId}/?location=${position.coords.longitude},${position.coords.latitude}`;
+            fetch(url)
+                .then(response => {
+                    if (!response.ok) throw new Error('Network response was not ok');
+                    return response.json();
+                })
+                .then(data => {
+                    const eventList = document.getElementById('event-list');
+                    eventList.innerHTML = '';
+                    if (data.features && data.features.length > 0) {
+                        data.features.forEach((feature, index) => {
+                            const event = feature.properties;
+                            const coordinates = feature.geometry.coordinates; // [lng, lat]
+
+                            
+                            const div = document.createElement('div');
+                            div.className = index === 0 ? 'active-event' : 'passive-event';
+                            div.innerHTML = `
+                                <div class="event-header">
+                                    <h3 class="event-name">${event.name}</h3>
+                                    ${event.distance ? `<span class="event-distance">${event.distance.toFixed(2)}km</span>` : ''}
+                                </div>
+                                <p class="event-theme">${event.theme}</p>
+                                <p class="location-highlight">${event.address}</p>
+                                <p>Starts: ${new Date(event.start_date).toLocaleString()}</p>
+                                <p>Ends: ${new Date(event.end_date).toLocaleString()}</p>
+                                <button onclick="showModal('${event.name}', '${event.description.replace(/'/g, "\\'")}')">More</button>
+                            `;
+                            div.onclick = () => updateMap(coordinates[1], coordinates[0]);
+                            eventList.appendChild(div);
+
+                            
+                            addMarker(coordinates[1], coordinates[0], event.name, event.description);
+
+                            //map is centered on the first event (closest to user)
+                            if (index === 0) updateMap(coordinates[1], coordinates[0]);
+                        });
+                    } else {
+                        eventList.innerHTML = '<p>No upcoming events.</p>';
+                    }
+                })
+                .catch(error => console.error('Fetch Error:', error));
+        }
+
+        //this gets user location and loads events
+        navigator.geolocation.getCurrentPosition(
+            position => {
+                initMap(position.coords.latitude, position.coords.longitude);
+                loadEvents(position);
+            },
+            error => {
+                initMap(45.765351174974924, 21.23002507250284); // Default location (Timișoara)
+                loadEvents({ coords: { longitude: 21.23002507250284, latitude: 45.765351174974924 } });
+                alert('Location access denied. Using default location.');
+            }
+        );
+
+
+        document.getElementById('backToCategoriesBtn').addEventListener('click', () => {
+            window.location.href = "{% url 'category_list' city.id %}";
+        });
+    </script>
+    <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'921549422c908bb9',t:'MTc0MjEzODk2Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+</body>
+</html>

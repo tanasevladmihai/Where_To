@@ -1,0 +1,73 @@
+[
+{
+    "model": "events.city",
+    "pk": 1,
+    "fields": {
+        "name": "city1"
+    }
+},
+{
+    "model": "events.city",
+    "pk": 2,
+    "fields": {
+        "name": "city2"
+    }
+},
+{
+    "model": "events.city",
+    "pk": 3,
+    "fields": {
+        "name": "city3"
+    }
+},
+{
+    "model": "events.category",
+    "pk": 1,
+    "fields": {
+        "name": "catg1"
+    }
+},
+{
+    "model": "events.category",
+    "pk": 2,
+    "fields": {
+        "name": "catg2"
+    }
+},
+{
+    "model": "events.category",
+    "pk": 3,
+    "fields": {
+        "name": "catg3"
+    }
+},
+{
+    "model": "events.category",
+    "pk": 4,
+    "fields": {
+        "name": "catg4"
+    }
+},
+{
+    "model": "events.category",
+    "pk": 5,
+    "fields": {
+        "name": "catg5"
+    }
+},
+{
+    "model": "events.event",
+    "pk": 2,
+    "fields": {
+        "name": "event1",
+        "category": 1,
+        "city": 1,
+        "theme": "education",
+        "address": "address",
+        "location": "SRID=4326;POINT (21.2300209 45.7652302)",
+        "start_date": "year-month-dayT18:00:00Z",
+        "end_date": "year-month-dayT18:00:00Z",
+        "description": "cool stuff"
+    }
+}
+]

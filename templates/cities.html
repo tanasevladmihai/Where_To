@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cities</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+<body>
+    <div class="header">
+        <h1 class="head-title">Choose your city</h1>
+    </div>
+
+    <div class="carousel-container">
+        <button class="carousel-arrow prev" onclick="scrollCarousel(-1)">❮</button>
+        <button class="carousel-arrow next" onclick="scrollCarousel(1)">❯</button>
+
+        <div class="city-carousel" id="cityCarousel">
+            {% for city in cities %}
+                <div class="city-block" data-city-id="{{ city.id }}" onclick="showSelectedCity(this)">
+                    <img src="{% static 'images/cities/'|add:city.name|lower|add:'.jpg' %}" alt="{{ city.name }}">
+                    <h2>{{ city.name }}</h2>
+                    <p>Explore events in {{ city.name }}</p>
+                </div>
+            {% empty %}
+                <p>No cities available.</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="selected-city-block" id="selectedCityBlock">
+
+    </div>
+
+    <script>
+        function scrollCarousel(direction) {
+            const carousel = document.getElementById('cityCarousel');
+            const scrollAmount = carousel.offsetWidth * 0.33;
+            carousel.scrollBy({ left: direction * scrollAmount, behavior: 'smooth' });
+        }
+
+        function showSelectedCity(element) {
+            const selectedBlock = document.getElementById('selectedCityBlock');
+            const clone = element.cloneNode(true);
+            const cityId = element.dataset.cityId;
+
+            selectedBlock.innerHTML = `
+                ${clone.querySelector('img').outerHTML}
+                <h2>${clone.querySelector('h2').textContent}</h2>
+                <p>${clone.querySelector('p').textContent}</p>
+                <a href="{% url 'category_list' 0 %}" class="go-button" data-city-id="${cityId}">Go</a>
+            `;
+
+            
+            const link = selectedBlock.querySelector('.go-button');
+            link.href = link.href.replace('/0/', `/${cityId}/`);
+
+            
+            selectedBlock.style.display = 'block';
+            selectedBlock.classList.remove('float-up'); 
+            void selectedBlock.offsetWidth; 
+            selectedBlock.classList.add('float-up');
+        }
+    </script>
+    <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'92155de92c06adde',t:'MTc0MjEzOTgxMy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+</body>
+</html>

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Categories in {{ city.name }}</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+<body>
+    <div class="header">
+        <a href="{% url 'city_list' %}" class="header-button">Back to Cities</a>
+        <h1 class="head-title">Discover events in {{ city.name }}</h1>
+        <div class="nav-button" id="backToCitiesBtn" style="background-image: url('{% static 'images/cities/'|add:city.name|lower|add:'.jpg' %}')"></div>
+    </div>
+
+    <div class="carousel-container">
+        <button class="carousel-arrow prev" onclick="scrollCarousel(-1)">❮</button>
+        <button class="carousel-arrow next" onclick="scrollCarousel(1)">❯</button>
+
+        <div class="city-carousel" id="categoryCarousel">
+            {% for category in categories %}
+                <div class="city-block" data-category-id="{{ category.id }}" onclick="showSelectedCategory(this)">
+                    <img src="{% static 'images/categories/'|add:category.name|lower|add:'.jpg' %}" alt="{{ category.name }}">
+                    <h2>{{ category.name }}</h2>
+                    <p>View {{ category.name }} in {{ city.name }}</p>
+                </div>
+            {% empty %}
+                <p>No categories available.</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="selected-city-block" id="selectedCategoryBlock">
+        <!-- it looks empty but it's okay because it will be filled with JS when it runs -->
+    </div>
+
+    <script>
+        function scrollCarousel(direction) {
+            const carousel = document.getElementById('categoryCarousel');
+            const scrollAmount = carousel.offsetWidth * 0.33;
+            carousel.scrollBy({ left: direction * scrollAmount, behavior: 'smooth' });
+        }
+
+        function showSelectedCategory(element) {
+            const selectedBlock = document.getElementById('selectedCategoryBlock');
+            const clone = element.cloneNode(true);
+            const categoryId = element.dataset.categoryId;
+
+            selectedBlock.innerHTML = `
+                ${clone.querySelector('img').outerHTML}
+                <h2>${clone.querySelector('h2').textContent}</h2>
+                <p>${clone.querySelector('p').textContent}</p>
+                <a href="{% url 'event_list' city.id 0 %}" class="go-button" data-category-id="${categoryId}">Go</a>
+            `;
+
+            
+            const link = selectedBlock.querySelector('.go-button');
+            link.href = link.href.replace('/0/', `/${categoryId}/`);
+
+            
+            selectedBlock.style.display = 'block';
+            selectedBlock.classList.remove('float-up'); 
+            void selectedBlock.offsetWidth; 
+            selectedBlock.classList.add('float-up');
+        }
+
+        document.getElementById('backToCitiesBtn').addEventListener('click', () => {
+            window.location.href = "{% url 'city_list' %}";
+        });
+    </script>
+    <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'92154941df1bb094',t:'MTc0MjEzODk2Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+</body>
+</html>
